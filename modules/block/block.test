@@ -44,6 +44,8 @@ class BlockTestCase extends DrupalWebTestCase {
    */
   function testCustomBlock() {
     // Confirm that the add block link appears on block overview pages.
+    $this->drupalGet('admin/structure/block/help');
+    $this->assertRaw(l('Add block', 'admin/structure/block/add'), 'Add block link is present on block overview page for default theme.');
     $this->drupalGet('admin/structure/block');
     $this->assertRaw(l('Add block', 'admin/structure/block/add'), 'Add block link is present on block overview page for default theme.');
     $this->drupalGet('admin/structure/block/list/seven');
