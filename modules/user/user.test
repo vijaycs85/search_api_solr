@@ -471,8 +471,8 @@ class UserLoginTestCase extends DrupalWebTestCase {
    */
   public function resetUserPassword($user) {
     $this->drupalGet('user/password');
-    $edit['name'] = $user->getUsername();
-    $this->drupalPost(NULL, $edit, 'Submit');
+    $edit['name'] = $user->name;
+    $this->drupalPost(NULL, $edit, 'E-mail new password');
     $_emails = $this->drupalGetMails();
     $email = end($_emails);
     $urls = array();
