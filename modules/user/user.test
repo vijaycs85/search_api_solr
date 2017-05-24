@@ -354,16 +354,23 @@ class UserLoginTestCase extends DrupalWebTestCase {
     // A login with the correct password should also result in a flood error
     // message.
     $this->assertFailedLogin($user1, 'ip');
+    $this->resetUserPassword($user1);
+    $this->drupalLogout();
+    // Try to login as user 1, it should be successful.
+    $this->drupalLogin($user1);
+    $this->assertNoRaw('Too many failed login attempts from your IP address.');
   }
 
   /**
    * Test the per-user login flood control.
    */
   function testPerUserLoginFloodControl() {
+    $user_limit = 3;
+
     // Set a high global limit out so that it is not relevant in the test.
     variable_set('user_failed_login_ip_limit', 4000);
     // Set the per-user login limit.
-    variable_set('user_failed_login_user_limit', 3);
+    variable_set('user_failed_login_user_limit', $user_limit);
 
     $user1 = $this->drupalCreateUser(array());
     $incorrect_user1 = clone $user1;
@@ -393,6 +400,12 @@ class UserLoginTestCase extends DrupalWebTestCase {
     // Try one more attempt for user 1, it should be rejected, even if the
     // correct password has been used.
     $this->assertFailedLogin($user1, 'user');
+    $this->resetUserPassword($user1);
+    $this->drupalLogout();
+
+    // Try to login as user 1, it should be successful.
+    $this->drupalLogin($user1);
+    $this->assertNoRaw('There have been more than ' . $user_limit . ' failed login attempts for this account.');
   }
 
   /**
@@ -449,6 +462,26 @@ class UserLoginTestCase extends DrupalWebTestCase {
       $this->assertText(t('Sorry, unrecognized username or password. Have you forgotten your password?'));
     }
   }
+
+  /**
+   * Reset user password.
+   *
+   * @param object $user
+   *   A user object.
+   */
+  public function resetUserPassword($user) {
+    $this->drupalGet('user/password');
+    $edit['name'] = $user->getUsername();
+    $this->drupalPost(NULL, $edit, 'Submit');
+    $_emails = $this->drupalGetMails();
+    $email = end($_emails);
+    $urls = array();
+    preg_match('#.+user/reset/.+#', $email['body'], $urls);
+    $resetURL = $urls[0];
+    $this->drupalGet($resetURL);
+    $this->drupalPost(NULL, NULL, 'Log in');
+  }
+
 }
 
 /**

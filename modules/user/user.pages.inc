@@ -156,6 +156,20 @@ function user_pass_reset($form, &$form_state, $uid, $timestamp, $hashed_pass, $a
       elseif ($account->uid && $timestamp >= $account->login && $timestamp <= $current && $hashed_pass == user_pass_rehash($account->pass, $timestamp, $account->login, $account->uid)) {
         // First stage is a confirmation form, then login
         if ($action == 'login') {
+          if (variable_get('user_failed_login_identifier_uid_only', FALSE)) {
+            // Register flood events based on the uid only, so they apply for any
+            // IP address. This is the most secure option.
+            $identifier = $account->uid;
+          }
+          else {
+            // The default identifier is a combination of uid and IP address. This
+            // is less secure but more resistant to denial-of-service attacks that
+            // could lock out all users with public user names.
+            $identifier = $account->uid . '-' . ip_address();
+          }
+          flood_clear_event('failed_login_attempt_ip');
+          flood_clear_event('failed_login_attempt_user', $identifier);
+
           // Set the new user.
           $user = $account;
           // user_login_finalize() also updates the login timestamp of the
